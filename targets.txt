@@ -1,2 +1,3 @@
 #please put your target websites here line by line
 http://perpustakaan.pn-boyolali.go.id
+https://e-office.lebakkab.go.id
