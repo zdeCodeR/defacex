@@ -1,4 +1,7 @@
 #please put your target websites here line by line
+http://savanacloud.com
+http://kobralocks.com
+http://essentialtours.com
 https://perpustakaan.pn-boyolali.go.id
 https://e-office.lebakkab.go.id
 https://lampungprov.go.id
