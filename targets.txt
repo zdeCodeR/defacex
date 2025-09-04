@@ -1,3 +1,4 @@
 #please put your target websites here line by line
 https://perpustakaan.pn-boyolali.go.id
 https://e-office.lebakkab.go.id
+https://lampungprov.go.id
